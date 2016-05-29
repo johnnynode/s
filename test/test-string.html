@@ -1,0 +1,43 @@
+﻿<script src="../src/util.js"></script>
+<script src="template.js"></script>
+<script>
+  testLtrim();
+  testRtrim();
+  testTrim();
+  testFormateString();
+  testBindAtrtemplate();
+  testQueryString();
+  function testLtrim(){
+    var str1 = ' abc d ';
+    var res1 = $$.ltrim(str1);
+    console.log(res1+res1.length); //abc d 6
+  }
+  function testRtrim(){
+    var str1 = ' abc d ';
+    var res1 = $$.rtrim(str1);
+    console.log(res1+res1.length); // abc d6
+  }
+  function testTrim(){
+    var str1 = ' abc d ';
+    var res1 = $$.trim(str1);
+    console.log(res1+res1.length); //abc d5
+  }
+  function testFormateString(){
+    var str = '@(name)同学，今年@(age)岁了';
+    var data = {"name":"小明","age":"10"};
+    var res = $$.formateString(str,data);
+    console.log(res); //小明同学，今年10岁了
+  }
+  function testBindAtrtemplate(){
+    var str = "{{name}}同学，今年{{age}}岁了";
+    var data = {"name":"小明","age":"10"};
+    var res = $$.bindAtrtemplate(str,data);
+    console.log(res); //小明同学，今年10岁了
+  }
+  function testQueryString(){
+    var res = $$.querystring();
+    // 我们需要手动在当前页面上加参数比如url : ...test-string.html?title=haha&size=10
+    console.log(res); //{Object {title: "haha", size: "10"}
+  }
+
+</script>
