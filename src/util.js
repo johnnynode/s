@@ -15,6 +15,7 @@
         }
     }
     var $$ = new Util();
+    "use strict";
 
     /* 用extend实现模块化管理 */
 
@@ -138,7 +139,250 @@
             }
         }
 
+    });
+
+    /* 事件框架 */
+    $$.extend($$,{
+        on:function(id,type,fn){
+            var dom = $$.isString(id)?$$.$id(id):id;
+            if(dom.addEventListener){
+                dom.addEventListener(type,fn,false);
+            }else if(dom.attachEvent){
+                dom.attachEvent('on'+type,fn);
+            }
+        },
+        un:function(id,type,fn){
+            var dom = $$.isString(id)?$$.$id(id):id;
+            if(dom.removeEventListener){
+                dom.removeEventListener(type,fn);
+            }else if(dom.detachEvent){
+                dom.detachEvent(type,fn);
+            }
+        },
+        click:function(id,fn){
+            $$.on(id,'click',fn);
+        },
+        mouseover:function(id,fn){
+            $$.on(id,'mouseover',fn);
+        },
+        mouseout:function(id,fn){
+            $$.on(id,'mouseout',fn);
+        },
+        hover:function(id,fnOver,fnOut){
+            if(fnOver){
+                $$.on(id,'mouseover',fnOver);
+            }
+            if(fnOut){
+                $$.on(id,'mouseout',fnOut);
+            }
+        },
+        getEvent:function(e){
+            return e?e:window.event;
+        },
+        getTarget:function(e){
+            var evt = $$.getEvent(e);
+            return evt.target || evt.srcElement;
+        },
+        preventDefault:function(e){
+            var evt = $$.getEvent(e);
+            if(evt.preventDefault){
+                evt.preventDefault();
+            }else{
+                evt.returnValue = false;
+            }
+        },
+        stopPropagation:function(e){
+            var evt = $$.getEvent(e);
+            if(evt.stopPropagation){
+                evt.stopPropagation();
+            }else{
+                evt.cancelBubble = true;
+            }
+        }
+    });
+
+    /* 样式操作 */
+    $$.extend($$,{
+        getStyle:function(dom){
+            if(dom.currentStyle){
+                return dom.currentStyle[key];
+            }else{
+                return getComputedStyle(dom,null)[key];
+            }
+        },
+        setStyle:function(dom,key,value){
+            dom.style[key] = value;
+        },
+        css:function(context,key,value){
+            /*如果是数组*/
+            if(context){
+                /* 如果有value就是设置css */
+                if(value){
+                    for(var i = dom.length-1;i>=0;i--){
+                        $$.setStyle(dom[i],key,value);
+                    }
+                }else{
+                    /* 否则就是获取css */
+                    return getStyle(dom[0]);
+                }
+            }else{
+                /* 如果不是数组 */
+                if(value){
+                    $$.setStyle(dom,key,value);
+                }else{
+                    return $$.getStyle(dom,key);
+                }
+            }
+        },
+        hide:function(context){
+            for(var i=0;i<doms.length; i++){
+                doms[i].style.display='none';
+            }
+        },
+        show:function(context){
+            for(var i=0;i<doms.length; i++){
+                doms[i].style.display='block';
+            }
+        }
+    });
+
+    /* 属性操作 */
+    $$.extend($$,{
+        attr:function(context,key,value){
+            /* 如果是一个数组的话 */
+            if(context.length){
+                if(value){
+                    for(var i=0;i<context.length;i++){
+                        context[i].setAttribute(key,value);
+                    }
+                }else{
+                    return doms[0].getAttribute(key);
+                }
+            }else{
+            /* 如果是单个元素 */
+                if(value){
+                    context.setAttribute(key,value);
+                }else{
+                    return context.getAttribute(key);
+                }
+            }
+        },
+        /*在这里约定，第一个参数是上下文，其他参数都是属性*/
+        removeAttr:function(){
+            var list = Array.prototype.slice.call(arguments);
+            var context = list[0];
+            var attrs = list.slice(1);
+            function removeOne(dom){
+                for(var j=0;j<attrs.length;j++){
+                    dom.removeAttribute(attr[j]);
+                }
+            }
+            /* 如果context是数组的话 */
+            if(context.length){
+                for(var i=0; i<context.length;i++){
+                    removeOne(context[i]);
+                }
+            }else{
+                removeOne(context);
+            }
+        }
     })
+    /* class操作 */
+    $$.extend($$,{
+        addClass:function(context,classname){
+            function addClassName(dom){
+                dom.className += " " + classname;
+            }
+            /* 如果是数组 */
+            if(context.length){
+                for(var i=0; i<context.length; i++){
+                    addClassName(context[i])
+                }
+            }else{
+                addClassName(context)
+            }
+        },
+        removeClass:function(context,classname){
+            function removeClassname(dom,name){
+                dom.className = dom.className.replace(name,'');
+            }
+            if(context.length){
+                for(var i=0; i<context.length; i++){
+                    removeClassname(context[i],classname);
+                }
+            }else{
+                removeClassname(context,classname);
+            }
+        }
+    })
+
+    /* html操作 */
+    $$.extend($$,{
+        html:function(context,str){
+            /* 如果是数组的话 */
+            if(context.length){
+                /* 存在str参数的话 => 设置模式 */
+                if(str){
+                    for(var i=0;i<context.length;i++){
+                        context[i].innerHTML = str;
+                    }
+                }else{
+                /* 获取模式 */
+                    return context[0].innerHTML;
+                }
+            }else{
+                if(str){
+                    context.innerHTML = str;
+                }else{
+                    return context.innerHTML;
+                }
+            }
+        }
+    })
+
+    /* 其他操作 */
+    $$.extend($$,{
+        /*模拟placeholder*/
+        placeHolder:function(id,str){
+            var dom = document.getElementById(id);
+            dom.onfocus = function(){
+                trim(dom);
+                // rgb的方式为了兼容chrome
+                if(dom.value === str && (dom.style.color === '#ccc' || dom.style.color === 'rgb(204, 204, 204)')){
+                    dom.value = '';
+                }
+                dom.style.color = '#333';
+            }
+            dom.onblur = function(){
+                trim(dom);
+                console.log(dom.value);
+                if(!dom.value){
+                    dom.value = str;
+                    dom.style.color = '#ccc';
+                }
+            }
+            function trim(obj){
+                if(typeof obj === 'object'){
+                    // use regular expression to trim two sides space
+                    obj.value = obj.value.replace(/^\s+|\s+$/g,"");
+                }
+            }
+        },
+        /* 5s 之后跳转页面 */
+        doRedirect:function(eleId,URL){
+            var dom = document.getElementById(eleId);
+            var num = 5;
+            (function () {
+                dom.innerHTML = num;
+                num--;
+                /*  每秒钟调用函数自身一次  */
+                setTimeout(arguments.callee, 1000);
+                if (num === 0) {
+                    window.location.href = URL;
+                }
+            })();
+        }
+    });
 
     // 最后暴露出去核心对象
     w.$$ = w.Util = $$;
